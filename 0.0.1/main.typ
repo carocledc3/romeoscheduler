@@ -18,9 +18,10 @@
 )
 
 #let scheduler(inp) = [
-  #let parameters = yaml(inp).parameters
-  #let subjects = yaml(inp).subjects
-  #let breaks = yaml(inp).breaks
+  #assert(type(inp) == dictionary, message: "Input must be YAML!")
+  #let parameters = inp.parameters
+  #let subjects = inp.subjects
+  #let breaks = inp.at("breaks",default:none)
   #let breakcells = ()
   #let subjectcells = ()
   #let coordslist = ()
@@ -30,6 +31,9 @@
   #let periodcells = ()
   #let daycells = ()
 
+
+  #set text(size: 1pt * parameters.at("font-size", default: 20))
+  #show grid.cell: gc => if(parameters.exclude != 0 and gc.y > parameters.exclude){none}else{gc}
   #let daycolours = (
     catppuccin.subtext0,
     catppuccin.blue,
@@ -58,7 +62,7 @@
     colour,
     colour.darken(factor),
   )
-  #set text(size: 20pt)
+  
   #let subjectcell(
     x, y,
     lab: false,
@@ -146,6 +150,7 @@
         
           #text(weight: 900, 5em/3)[#iconloader("pin_drop", offset: 1pt, scale: 1.25)~#room\ ]
           #iconloader("numbers", offset: 1pt, scale: 1.25)~*#if(not parameters.export){[#csc/]}#code*_~
+          #if(parameters.page-height / parameters.page-width > 1.5){linebreak()}
           _#iconloader("person", offset: 1pt, scale: 1.25)~_*#inst*_\
           #iconloader("schedule", offset: 1pt, scale: 1.25)~*#time*
         ]
@@ -178,6 +183,7 @@
     x,
     name: "Day"
   ) = grid.cell(
+    inset: 1em,
     y: 1,
     x: x,
     fill: if(x == 0 or (x != 0 and calc.odd(x))) {
@@ -214,7 +220,9 @@
     #show "a": text.with(fill: catppuccin.yellow)
     #show "p": text.with(fill: catppuccin.sky)
     Period \
-    #text(size: 3em, weight: 900, [#pn]) \
+    #text(size: 1em * calc.max(
+      parameters.page-height * 2 / parameters.page-width,
+      3), weight: 900, [#pn]) \
     #start \
     #end \
   ]
@@ -245,7 +253,8 @@
   }
 
   #for i in range(1, parameters.height + 1) {
-    periodcells.push(timecell(
+    if(parameters.exclude == 0 or (i < parameters.exclude)) {
+      periodcells.push(timecell(
       i + parameters.offset,
       start: formattedtimes.at(i - 1),
       end: formattedtimes.at(i)
@@ -254,6 +263,7 @@
     periods.push(
       formattedtimes.at(i - 1) + " - " + formattedtimes.at(i)
     )
+    }
   }
 
   #for i in range(0, parameters.days + 1) {
@@ -285,7 +295,7 @@
     if (type(subparams.schedule) == str and subparams.schedule.starts-with(regex("\d"))) {
       let decodedsched = coordsdecoder(subparams.schedule, offset: parameters.offset)
       for j in decodedsched.at(0) {
-        if ((j, decodedsched.at(1)) not in coordslist) {
+        if (((j, decodedsched.at(1)) not in coordslist) and ((parameters.exclude == 0 or (decodedsched.at(1) < parameters.exclude)))) {
           coordslist.push((j, decodedsched.at(1)))
           subjectcells.push(
             subjectcell(
@@ -311,7 +321,7 @@
     if(subparams.at("lab-schedule", default: none) != none){if (subparams.lab-schedule.starts-with(regex("\d"))) {
       let decodedsched = coordsdecoder(subparams.lab-schedule, offset: parameters.offset)
       for j in decodedsched.at(0) {
-        if ((j, decodedsched.at(1)) not in coordslist) {
+        if (((j, decodedsched.at(1)) not in coordslist) and ((parameters.exclude == 0 or (decodedsched.at(1) < parameters.exclude)))) {
           coordslist.push((j, decodedsched.at(1)))
           subjectcells.push(
             subjectcell(
@@ -336,11 +346,12 @@
     }}
   }
 
-  #for i in breaks {
+  #if(breaks != none){
+    for i in breaks {
     let subparams = i.at(1);
     let decodedsched = coordsdecoder(subparams.schedule, offset: parameters.offset);
     for j in decodedsched.at(0) {
-        if ((j, decodedsched.at(1)) not in coordslist) {
+        if (((j, decodedsched.at(1)) not in coordslist) and ((parameters.exclude == 0 or (decodedsched.at(1) < parameters.exclude)))) {
           coordslist.push((j, decodedsched.at(1)))
           breakcells.push(
             breakcell(
@@ -353,8 +364,7 @@
         }
     }
   }
-
-
+  }
 
   #page(
     width: parameters.page-width * 1in,
@@ -364,17 +374,20 @@
     #set text(
       font: if (parameters.font != none) { (parameters.font, "Romeosevka") } else { "Romeosevka" },
     )
+
     #grid(
-      stroke: stroke(
+      stroke: (_, y) => if(parameters.exclude == 0 or y -1 < parameters.exclude) {stroke(
         dash: "dotted",
         paint: catppuccin.base,
         thickness: 1pt
-      ),
+      )} else {none},
       columns: (auto, ..(parameters.days * (1fr,))),
-      rows: (5%, 5%, ..(parameters.height * (1fr,))),
+      rows: (auto, auto, ..(parameters.height * (1fr,))),
+      grid.cell(fill: gradient.linear(angle: 90deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle))[],
       grid.cell(
+        inset: 1em,
         fill: gradient.linear(angle: 90deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle),
-        colspan: 7,
+        colspan: parameters.days,
         align: center + horizon,
       )[
         #set text(
