@@ -30,7 +30,20 @@
   #let periods = ()
   #let periodcells = ()
   #let daycells = ()
-
+  #{
+    parameters.title = parameters.at("title", default: "Schedule")
+    parameters.period-length = parameters.at("period-length", default: 80)
+    parameters.day-start = parameters.at("day-start", default: 450)
+    parameters.height = parameters.at("height", default: 8)
+    parameters.days = parameters.at("days", default: 6)
+    parameters.offset = parameters.at("offset", default: 0)
+    parameters.font-size = parameters.at("font-size", default: 16)
+    parameters.page-width = parameters.at("page-width", default: 16)
+    parameters.page-height = parameters.at("page-height", default: 26)
+    parameters.font = parameters.at("font", default: "RomeosevkaQP")
+    parameters.export = parameters.at("export", default: true)
+    parameters.exclude = parameters.at("exclude", default: 0)
+  }
 
   #set text(size: 1pt * parameters.at("font-size", default: 20))
   #show grid.cell: gc => if(parameters.exclude != 0 and gc.y > parameters.exclude){none}else{gc}
@@ -136,8 +149,7 @@
       }
       #block(
         inset: (
-          left: 1em/4,
-          right: 1em/2,
+          x: 1em/4,
           top: 1em/4,
           bottom: 1em/2
         ),
@@ -372,7 +384,7 @@
     margin: 0pt,
   )[
     #set text(
-      font: if (parameters.font != none) { (parameters.font, "Romeosevka") } else { "Romeosevka" },
+      font: if (parameters.font != none) { (parameters.font, "Romeosevka", "Iosevka SS04", "Iosevka") } else { font },
     )
 
     #grid(
