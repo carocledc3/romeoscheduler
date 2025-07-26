@@ -1,0 +1,112 @@
+parameters: {
+    title: CITCS-1J - 3rd Term Schedule,
+    height: 9,
+}
+
+subjects: {
+  cc9: {
+    code: CC9,
+    name: Discrete Structures,
+    section: 1J,
+    teacher: Luis William Meing,
+    room: U705,
+    schedule: 2mwf,
+    colour: '#0cb022ff',
+    textcolour: '#e4ffddff',
+    icon: functions,
+  },
+
+  cc10: {
+    code: CC10,
+    name: Introduction to Networks,
+    section: 1J,
+    teacher: Jhunfel Dela Cruz,
+    lab-teacher: Jhunfel Dela Cruz,
+    room: S311,
+    lab-room: S312,
+    schedule: 9th,
+    lab-schedule: 8thr,
+    colour: '#02adcc',
+    textcolour: '#ebfbffff',
+    icon: wifi,
+  },
+
+  cc11: {
+    code: CC11,
+    name: Communication in the Workplace,
+    section: 1J,
+    teacher: Bretz Harllynne Moltio,
+    room: U706,
+    schedule: 1mwf,
+    colour: '#c50d3a',
+    textcolour: '#ffe6ecff',
+    icon: 3p,
+  },
+
+  cc12: {
+    code: CC12,
+    name: Statistical Design and Analysis,
+    section: 1J,
+    teacher: Jessie Martirez,
+    lab-teacher: Jessie Martirez,
+    room: S311,
+    lab-room: M306,
+    schedule: 8mw,
+    lab-schedule: 7mwf,
+    colour: '#ef7208',
+    textcolour: '#fffce1ff',
+    icon: scatter_plot,
+  },
+
+  cc13: {
+    code: CC13,
+    name: Systems Analysis and Design,
+    section: 1J,
+    teacher: Felipe Pati Jr.,
+    room: M301,
+    schedule: 5thr,
+    colour: '#fcdf6a',
+    textcolour: '#814500ff',
+    icon: manufacturing,
+  },
+
+  cc22: {
+    code: CC22,
+    name: Introduction to Platform Technologies,
+    section: 1J,
+    teacher: Leonard Prim Reyes,
+    lab-teacher: Leonard Prim Reyes,
+    room: S311,
+    lab-room: M304,
+    schedule: 5mw,
+    lab-schedule: 4mwf,
+    colour: '#032568',
+    textcolour: '#e8f0ffff',
+    icon: terminal,
+  },
+
+  pathfit3: {
+    code: Pathfit3,
+    name: Martial Arts,
+    section: 1J,
+    teacher: Niño Felix,
+    room: Gymnasium,
+    schedule: 7th,
+    colour: '#c511be',
+    textcolour: '#ffdefbff',
+    icon: sports_martial_arts,
+  },
+
+  nstp2: {
+    code: NSTP2,
+    name: National Service Training Programme 2,
+    section: 1J,
+    teacher: Sheena Palaroan,
+    room: N/A,
+    schedule: 4thr,
+    colour: '#8e3c3cff',
+    textcolour: '#ffddddff',
+    icon: flag,
+  }
+  
+}

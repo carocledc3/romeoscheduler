@@ -37,11 +37,12 @@
     parameters.height = parameters.at("height", default: 8)
     parameters.days = parameters.at("days", default: 6)
     parameters.offset = parameters.at("offset", default: 0)
-    parameters.font-size = parameters.at("font-size", default: 16)
-    parameters.page-width = parameters.at("page-width", default: 16)
-    parameters.page-height = parameters.at("page-height", default: 26)
-    parameters.font = parameters.at("font", default: "RomeosevkaQP")
+    parameters.font-size = parameters.at("font-size", default: 18)
+    parameters.page-width = parameters.at("page-width", default: 14)
+    parameters.page-height = parameters.at("page-height", default: 28)
+    parameters.font = parameters.at("font", default: "Iosevka")
     parameters.export = parameters.at("export", default: true)
+    parameters.military-time = parameters.at("military-time", default: false)
     parameters.exclude = parameters.at("exclude", default: 0)
   }
 
@@ -158,19 +159,19 @@
         height: 100%)[
         #place(top + left)[
           #set par(leading: 0.4em)
-          #set text(0.5em, weight: 700)
+          #set text(0.55em, weight: 700)
         
-          #text(weight: 900, 5em/3)[#iconloader("pin_drop", offset: 1pt, scale: 1.25)~#room\ ]
-          #iconloader("numbers", offset: 1pt, scale: 1.25)~*#if(not parameters.export){[#csc/]}#code*_~
-          #if(parameters.page-height / parameters.page-width > 1.5){linebreak()}
-          _#iconloader("person", offset: 1pt, scale: 1.25)~_*#inst*_\
-          #iconloader("schedule", offset: 1pt, scale: 1.25)~*#time*
+          #text(weight: 900, 5em/3)[#iconloader("pin_drop", offset: 1pt, scale: 1.25)#h(1em/4)#room\ ]
+          #if(not parameters.export){[#iconloader("numbers", offset: 1pt, scale: 1.25)#h(1em/4)*#csc/#code*
+          #if(parameters.page-height / parameters.page-width > 1.5){linebreak()} ]}
+          #iconloader("person", offset: 1pt, scale: 1.25)#h(1em/4)_*#inst*_\
+          #iconloader("schedule", offset: 1pt, scale: 1.25)#h(1em/4)*#time*
         ]
 
         #place(bottom+left)[
           #text(weight: 900, size: 1em * scale)[#set par(leading: 1em/3);
           
-          #name #text(fill: textfill.mix(rgb(colour)).mix(textfill).saturate(10%))[#sym.section#section]]
+          #if(parameters.export){[#text(fill: textfill.mix(rgb(colour)).mix(textfill).saturate(10%))[#code\-#section]]} #name #if(not parameters.export){[#text(fill: textfill.mix(rgb(colour)).mix(textfill).saturate(10%))[#sym.section#section]]}]
         ]
       ]
     ]
@@ -253,7 +254,7 @@
   }
 
   #for i in times {
-    if(parameters.export) {
+    if(not parameters.military-time) {
       formattedtimes.push(
         i.display("[hour repr:12 padding:none]:[minute padding:zero]") + if(i.hour() < 12) {"a"} else {"p"}
       )
@@ -315,15 +316,15 @@
               decodedsched.at(1) + 1,
               colour: subparams.at("colour", default: catppuccin.surface0),
               textcol: subparams.at("textcolour", default: catppuccin.text),
-              inst: subparams.at("teacher", default: "Dr. James Wilson"),
-              room: subparams.at("room", default: "Rubber Room"),
+              inst: subparams.at("teacher", default: "Dr. Gregory House"),
+              room: subparams.at("room", default: "Room"),
               name: subparams.at("name", default: "Sample Subject Name"),
               icon: subparams.at("icon", default: "deployed_code"),
               scale: subparams.at("scale", default: 1),
               csc: subparams.at("csc", default: "##xx"),
               code: subparams.at("code", default: "CCxx"),
               section: subparams.at("section", default: "1x"),
-              time: periods.at(decodedsched.at(1) - 1, default: "Hell if I know"),
+              time: periods.at(decodedsched.at(1) - 1, default: "In God's Time"),
               span: subparams.at("span", default: 1)
             )
           )
@@ -343,14 +344,14 @@
               colour: subparams.colour,
               textcol: subparams.textcolour,
               inst: subparams.at("lab-teacher", default: "Dr. Gregory House"),
-              room: subparams.at("lab-room", default: "Rubber Room"),
+              room: subparams.at("lab-room", default: "Room"),
               name: subparams.at("name", default: "Subject McSubject-face"),
               icon: subparams.at("icon", default: "deployed_code"), 
               scale: subparams.at("scale", default: 1),
               csc: subparams.at("csc", default: "NNXX"),
               code: subparams.at("code", default: "CCXX"),
               section: subparams.at("section", default: "1x"),
-              time: periods.at(decodedsched.at(1) - 1, default: "Hell if I know"),
+              time: periods.at(decodedsched.at(1) - 1, default: "Lab Time"),
               span: subparams.at("span", default: 1)
               ))
         }
@@ -384,7 +385,7 @@
     margin: 0pt,
   )[
     #set text(
-      font: if (parameters.font != none) { (parameters.font, "Romeosevka", "Iosevka SS04", "Iosevka") } else { font },
+      font: if (parameters.font != none) { (parameters.font,  "Iosevka SS04", "Romeosevka", "Iosevka") } else { font },
     )
 
     #grid(
