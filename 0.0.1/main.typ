@@ -60,7 +60,6 @@
   )
 
   #let days = (
-    "",
     "Monday",
     "Tuesday",
     "Wednesday",
@@ -83,7 +82,7 @@
     span: 1,
     scale: 1,
     name: "Subject McSubjectFace",
-    colour: "#8080ff",
+    colour: "#4040dd",
     room: "Rubber Room",
     textcol: "#ffffff",
     code: "CCXX",
@@ -184,7 +183,6 @@
   ) = grid.cell(
     x: x, y: y,
     rowspan: span,
-    fill: none,
     inset: 1em/2,
     align: horizon + center
   )[
@@ -198,7 +196,7 @@
   ) = grid.cell(
     inset: 1em,
     y: 1,
-    x: x,
+    x: x+1,
     fill: if(x == 0 or (x != 0 and calc.odd(x))) {
       gradient.linear(angle: 90deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle)
     } else {
@@ -207,7 +205,7 @@
     align: horizon + center
   )[
     #set text(
-      fill: {daycolours.at(x)},
+      fill: {daycolours.at(x+1)},
       size: 1.5em,
       weight: 900
     )
@@ -241,7 +239,7 @@
   ]
 
   #let rawdt(raw) = {
-    let selperiodhour = calc.floor(raw/60)
+    let selperiodhour = calc.rem(calc.floor(raw/60),24)
     let selperiodminute = calc.rem(raw,60)
     return datetime(hour: selperiodhour, minute: selperiodminute, second: 0)
   }
@@ -279,7 +277,7 @@
     }
   }
 
-  #for i in range(0, parameters.days + 1) {
+  #for i in range(0, parameters.days) {
     daycells.push(
       daycell(
         i, name: days.at(i)
@@ -288,11 +286,11 @@
   }
 
   #let coordsdecoder(sstr, offset: 0) = {
-    let y = if (sstr.starts-with(regex("\d"))) {
-      int(sstr.slice(0, 1)) - offset
+    let y = if (sstr.starts-with(regex("\d+"))) {
+      int(sstr.slice(0, sstr.position(regex("\D+")))) - offset
     } else { none }
     let x = ()
-    let sstrdays = sstr.slice(1)
+    let sstrdays = sstr.slice(sstr.position(regex("\D+")))
     if (sstrdays.contains("m")) { x.push(1) }
     if (sstrdays.contains("t")) { x.push(2) }
     if (sstrdays.contains("w")) { x.push(3) }
@@ -314,7 +312,7 @@
             subjectcell(
               j,
               decodedsched.at(1) + 1,
-              colour: subparams.at("colour", default: catppuccin.surface0),
+              colour: subparams.at("colour", default: "4040dd"),
               textcol: subparams.at("textcolour", default: catppuccin.text),
               inst: subparams.at("teacher", default: "Dr. Gregory House"),
               room: subparams.at("room", default: "Room"),
@@ -341,8 +339,8 @@
               j,
               decodedsched.at(1) + 1,
               lab: true,
-              colour: subparams.colour,
-              textcol: subparams.textcolour,
+              colour: subparams.at("colour", default: "2020cc"),
+              textcol: subparams.at("textcolour", default: catppuccin.text),
               inst: subparams.at("lab-teacher", default: "Dr. Gregory House"),
               room: subparams.at("lab-room", default: "Room"),
               name: subparams.at("name", default: "Subject McSubject-face"),
@@ -396,7 +394,11 @@
       )} else {none},
       columns: (auto, ..(parameters.days * (1fr,))),
       rows: (auto, auto, ..(parameters.height * (1fr,))),
-      grid.cell(fill: gradient.linear(angle: 90deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle))[],
+      fill: gradient.linear(
+        angle: 90deg,
+        white, catppuccin.text.mix(white)
+      ),
+      grid.cell(fill: gradient.linear(angle: 45deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle))[],
       grid.cell(
         inset: 1em,
         fill: gradient.linear(angle: 90deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle),
@@ -410,6 +412,7 @@
         )
         #parameters.title
       ],
+      grid.cell(fill: gradient.linear(angle: 45deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle))[],
       ..daycells,
       ..periodcells,
       ..subjectcells,
