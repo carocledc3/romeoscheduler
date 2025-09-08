@@ -7,6 +7,7 @@
   base: rgb("#1e1e2e"),
   surface0: rgb("#313244"),
   surface1: rgb("#45475a"),
+  surface2: rgb("#585b70"),
   text: rgb("#cdd6f4"),
   blue: rgb("#89b4fa"),
   red: rgb("#f38ba8"),
@@ -44,6 +45,8 @@
     parameters.export = parameters.at("export", default: true)
     parameters.military-time = parameters.at("military-time", default: false)
     parameters.exclude = parameters.at("exclude", default: 0)
+    parameters.darkmode = parameters.at("darkmode", default: false)
+    parameters.mini = parameters.at("mini", default: false)
   }
 
   #set text(size: 1pt * parameters.at("font-size", default: 20))
@@ -59,7 +62,17 @@
     catppuccin.subtext0,
   )
 
-  #let days = (
+  #let days = if(parameters.mini){
+    (
+    "Mon.",
+    "Tue.",
+    "Wed.",
+    "Thu.",
+    "Fri.",
+    "Sat.",
+    "Sun.",
+  )
+  } else {(
     "Monday",
     "Tuesday",
     "Wednesday",
@@ -67,7 +80,7 @@
     "Friday",
     "Saturday",
     "Sunday",
-  )
+  )}
 
   #let general-gradient(colour, textcol: none, factor: 20%, angle: 90deg) = gradient.linear(
     angle: angle,
@@ -129,10 +142,10 @@
       }
 
       #set par(leading: 0.5em)
-      #if (lab) {
+      #if(not parameters.mini){[#if (lab) {
         place(top + right, dx: -1pt / 2, dy: 1pt / 2)[
-          #rect(fill: textfill)[
-            #set text(fill: cellfill, weight: 900, size: 3em / 4)
+          #rect(inset: 0.2em, fill: textfill, stroke: (bottom: 0.5em + textfill.transparentize(33%), left: 0.5em + textfill.transparentize(50%)))[
+            #set text(fill: cellfill, weight: 900, size: 1em)
             Lab
           ]
         ]
@@ -149,9 +162,11 @@
       )[
         #place(top + left)[
           #set par(leading: 0.25em)
-          #set text(0.6129em, weight: 700)
 
-          #text(weight: 900, 5em / 3)[#iconloader("pin_drop", offset: 1pt, scale: 1.25)#h(1em / 4)#room\ ]
+          #text(weight: 900, 5em * 0.6 / 3)[#iconloader("pin_drop", offset: 1pt, scale: 1.25)#h(1em / 4)#room\ ]
+        #set text(
+            if(parameters.page-height / parameters.page-width >= 1.5){0.6129em}else{0.6em}
+          , weight: 700)
           #if (not parameters.export) {
             [#iconloader("numbers", offset: 1pt, scale: 1.25)#h(1em / 4)*#csc/#code*
               #if (parameters.page-height / parameters.page-width > 1.5) { linebreak() }
@@ -166,12 +181,32 @@
 
             #text(fill: textfill.mix(rgb(colour)).mix(textfill).saturate(10%),
             if(parameters.export) {
-              [#code\-#section]
+              [#code#if(section == ""){}else{"-"+section}]
             } else {
               [#sym.section#section]
             }) #name]
         ]
+      ]]} else {[
+
+        #block(
+        inset: (
+          x: 1em / 4,
+          top: 1em / 4,
+          bottom: 1em / 4,
+        ),
+        stroke: none,
+        width: 100%,
+        height: 100%,
+      )[
+        #place(horizon)[
+          #set par(leading: 0.25em)
+          #set text(1.125em, weight: 900)
+          *#csc/#code*#if(lab){set text(3em/4);[ Lab.]}
+          #text(weight: 700, 1em)[\@#room]
+        ]
       ]
+
+      ]}
     ])
   }
 
@@ -187,7 +222,13 @@
     inset: 1em / 2,
     align: horizon + center,
   )[
-    #set text(fill: catppuccin.surface1.transparentize(50%), size: 1.5em)
+    #set text(fill: if(parameters.darkmode) {
+      catppuccin.text
+    } else {
+      catppuccin.surface1.transparentize(50%)
+    }, size: if(parameters.mini){
+      1.5em
+    }else{2em})
     #emph(title)
   ]
 
@@ -231,7 +272,14 @@
     #set text(fill: catppuccin.text, weight: 900)
     #show "a": text.with(fill: catppuccin.yellow)
     #show "p": text.with(fill: catppuccin.sky)
-    Period \
+    #if(parameters.mini){[
+      #set par(leading: 0.3em)
+      #set text(1.35em)
+      #text(catppuccin.text.transparentize(30%))[\##pn] \
+      #start \
+    #end \
+    ]}else{[
+      Period \
     #text(
       size: 1em
         * calc.max(
@@ -241,8 +289,12 @@
       weight: 900,
       [#pn],
     ) \
+    #set text(
+      size: if(parameters.page-height / parameters.page-width >= 1.25){1.5em}else{1em}
+    )
     #start \
     #end \
+    ]}
   ]
 
   #let rawdt(raw) = {
@@ -310,15 +362,15 @@
             decodedsched.at(1) + 1,
             colour: subparams.at("colour", default: "3040dd"),
             textcol: subparams.at("textcolour", default: "eeeeee"),
-            inst: subparams.at("teacher", default: "Dr. Gregory House"),
-            room: subparams.at("room", default: "Room"),
-            name: subparams.at("name", default: "Sample Subject Name"),
+            inst: subparams.at("teacher", default: "---"),
+            room: subparams.at("room", default: "---"),
+            name: subparams.at("name", default: "---"),
             icon: subparams.at("icon", default: "deployed_code"),
             scale: subparams.at("scale", default: 1),
-            csc: subparams.at("csc", default: "##xx"),
-            code: subparams.at("code", default: "CCxx"),
-            section: subparams.at("section", default: "1x"),
-            time: periods.at(decodedsched.at(1) - 1, default: "In God's Time"),
+            csc: subparams.at("csc", default: "---"),
+            code: subparams.at("code", default: "---"),
+            section: subparams.at("section", default: ""),
+            time: periods.at(decodedsched.at(1) - 1, default: "---"),
             span: subparams.at("span", default: 1),
           ))
         }
@@ -336,15 +388,15 @@
               lab: true,
               colour: subparams.at("colour", default: "1820cc"),
               textcol: subparams.at("textcolour", default: "eeeeee"),
-              inst: subparams.at("lab-teacher", default: "Dr. Gregory House"),
-              room: subparams.at("lab-room", default: "Room"),
-              name: subparams.at("name", default: "Subject McSubject-face"),
+              inst: subparams.at("lab-teacher", default: "---"),
+              room: subparams.at("lab-room", default: "---"),
+              name: subparams.at("name", default: "---"),
               icon: subparams.at("icon", default: "deployed_code"),
               scale: subparams.at("scale", default: 1),
-              csc: subparams.at("csc", default: "NNXX"),
-              code: subparams.at("code", default: "CCXX"),
-              section: subparams.at("section", default: "1x"),
-              time: periods.at(decodedsched.at(1) - 1, default: "Lab Time"),
+              csc: subparams.at("csc", default: "---"),
+              code: subparams.at("code", default: "---"),
+              section: subparams.at("section", default: ""),
+              time: periods.at(decodedsched.at(1) - 1, default: "---"),
               span: subparams.at("span", default: 1),
             ))
           }
@@ -383,10 +435,14 @@
       } else { none },
       columns: (auto, ..(parameters.days * (1fr,))),
       rows: (auto, auto, ..(parameters.height * (1fr,))),
-      fill: gradient.linear(angle: 90deg, white, catppuccin.text.mix(white)),
+      fill: if(not parameters.darkmode) {
+        gradient.linear(angle: 90deg, white, catppuccin.text.mix(white))
+      } else {
+        gradient.linear(angle: 90deg, catppuccin.surface0, catppuccin.surface1)
+      },
       grid.cell(fill: gradient.linear(angle: 45deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle))[],
       grid.cell(
-        inset: 1em,
+        inset: if(parameters.mini){0pt}else{1em},
         fill: gradient.linear(angle: 90deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle),
         colspan: parameters.days,
         align: center + horizon,
@@ -396,7 +452,7 @@
           weight: 900,
           size: 2in / 3,
         )
-        #parameters.title
+        #if(parameters.mini){}else{parameters.title}
       ],
       grid.cell(fill: gradient.linear(angle: 45deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle))[],
       ..daycells,
