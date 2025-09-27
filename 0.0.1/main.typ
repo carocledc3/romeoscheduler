@@ -82,12 +82,35 @@
     "Sunday",
   )}
 
-  #let general-gradient(colour, textcol: none, factor: 20%, angle: 90deg) = gradient.linear(
+  #let general-gradient(colour, textcol: none, factor: 20%, angle: 45deg) = gradient.linear(
     angle: angle,
-    colour.lighten(factor),
+    colour.lighten(factor*2).saturate(factor / 2),
     colour,
-    colour.darken(factor),
+    colour.darken(factor*2/3).saturate(factor),
   )
+
+  #let rawdt(raw) = {
+    let selperiodhour = calc.rem(calc.floor(raw / 60), 24)
+    let selperiodminute = calc.rem(raw, 60)
+    return datetime(hour: selperiodhour, minute: selperiodminute, second: 0)
+  }
+
+  #for i in range(
+    1 + parameters.offset,
+    parameters.height + parameters.offset + 2,
+  ) {
+    times.push(rawdt(parameters.day-start + (i - 1) * parameters.period-length))
+  }
+
+  #for i in times {
+    if (not parameters.military-time) {
+      formattedtimes.push(
+        i.display("[hour repr:12 padding:none]:[minute padding:zero]") + if (i.hour() < 12) { "am" } else { "pm" },
+      )
+    } else {
+      formattedtimes.push(i.display("[hour repr:24 padding:zero]:[minute padding:zero]"))
+    }
+  }
 
   #let subjectcell(
     x,
@@ -113,7 +136,7 @@
         color.mix((white, 95%), (rgb(colour), 5%)).lighten(80%).saturate(10%)
       }
     } else { rgb(textcol) }
-    let cellfill = general-gradient(rgb(colour), textcol: rgb(textcol), angle: 90deg)
+    let cellfill = general-gradient(rgb(colour), textcol: rgb(textcol), angle: 45deg)
 
 
     return grid.cell(x: x, y: y, rowspan: span, inset: 0em, fill: cellfill, [
@@ -123,19 +146,19 @@
       )
       #if (lab) {
         place(top + left, dx: 1pt / 2, dy: 1pt / 2, rect(width: 100% - 1pt, height: 100% - 1pt, fill: modpattern(
-          (parameters.page-width * 1in / 40, parameters.page-width * 1in / 40),
+          (parameters.page-width * 2in / 40, parameters.page-width * 2in / 40),
           [
             #line(
-              start: (0%, 0%),
-              end: (100%, 100%),
-              stroke: parameters.page-width * 1in / (80 * calc.sqrt(2))
-                + textfill.transparentize(100% - parameters.at("pattern-opacity", default: 12.5%)),
+              start: (100%, 0%),
+              end: (0%, 100%),
+              stroke: parameters.page-width * 2in / (80 * calc.sqrt(2))
+                + textfill.mix(rgb(colour)).saturate(50%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) * 1% * 1.5),
             )
           ],
         )))
       } else {
         place(top + left, dx: 1pt / 2, dy: 1pt / 2, rect(width: 100%, height: 100%, fill: modpattern((1in, 1in), [
-          #set text(fill: textfill.transparentize(100% - parameters.at("pattern-opacity", default: 12.5%)).mix(), size: 2in / 3)
+          #set text(fill: textfill.mix(rgb(colour)).saturate(50%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) *1%* 1.5), size: 2in / 3)
           #place(top + left, dx: 50%)[#iconloader(icon)]
           #place(bottom + left, dx: 0%)[#iconloader(icon)]
         ])))
@@ -214,10 +237,12 @@
     x,
     y,
     span: 1,
+    colspan: 1,
     title: "Break",
   ) = grid.cell(
     x: x,
     y: y,
+    colspan: colspan,
     rowspan: span,
     inset: 1em / 2,
     align: horizon + center,
@@ -229,7 +254,10 @@
     }, size: if(parameters.mini){
       1.5em
     }else{2em})
-    #emph(title)
+    #emph(title)#linebreak()
+    #text(0.6em)[
+      #formattedtimes.at(y - 2) - #formattedtimes.at(y + span - 2)
+    ]
   ]
 
   #let daycell(
@@ -239,11 +267,7 @@
     inset: 1em,
     y: 1,
     x: x + 1,
-    fill: if (x == 0 or (x != 0 and calc.odd(x))) {
-      gradient.linear(angle: 90deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle)
-    } else {
-      gradient.linear(angle: 90deg, catppuccin.surface1, catppuccin.surface0, catppuccin.base)
-    },
+    fill: gradient.linear(angle: 45deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle),
     align: horizon + center,
   )[
     #set text(
@@ -260,18 +284,16 @@
     end: "",
   ) = grid.cell(
     inset: 1em / 2,
-    fill: if (calc.even(pn - parameters.offset + 1)) {
-      gradient.linear(angle: 0deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle)
-    } else {
-      gradient.linear(angle: 0deg, catppuccin.surface1, catppuccin.surface0, catppuccin.base)
-    },
+    fill: gradient.linear(angle: 45deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle),
     x: 0,
     y: pn - parameters.offset + 1,
     align: horizon + center,
   )[
     #set text(fill: catppuccin.text, weight: 900)
-    #show "a": text.with(fill: catppuccin.yellow)
-    #show "p": text.with(fill: catppuccin.sky)
+    #show "am": upper
+    #show "pm": upper
+    #show "am": text.with(2em/3, fill: catppuccin.yellow)
+    #show "pm": text.with(2em/3, fill: catppuccin.sky)
     #if(parameters.mini){[
       #set par(leading: 0.3em)
       #set text(1.35em)
@@ -297,28 +319,9 @@
     ]}
   ]
 
-  #let rawdt(raw) = {
-    let selperiodhour = calc.rem(calc.floor(raw / 60), 24)
-    let selperiodminute = calc.rem(raw, 60)
-    return datetime(hour: selperiodhour, minute: selperiodminute, second: 0)
-  }
+  
 
-  #for i in range(
-    1 + parameters.offset,
-    parameters.height + parameters.offset + 2,
-  ) {
-    times.push(rawdt(parameters.day-start + (i - 1) * parameters.period-length))
-  }
-
-  #for i in times {
-    if (not parameters.military-time) {
-      formattedtimes.push(
-        i.display("[hour repr:12 padding:none]:[minute padding:zero]") + if (i.hour() < 12) { "a" } else { "p" },
-      )
-    } else {
-      formattedtimes.push(i.display("[hour repr:24 padding:zero]:[minute padding:zero]"))
-    }
-  }
+  
 
   #for i in range(1, parameters.height + 1) {
     if (parameters.exclude == 0 or (i < parameters.exclude)) {
@@ -412,7 +415,13 @@
       for j in decodedsched.at(0) {
         if (((j, decodedsched.at(1)) not in coordslist) and (parameters.exclude == 0 or (decodedsched.at(1) < parameters.exclude))) {
           coordslist.push((j, decodedsched.at(1)))
-          breakcells.push(breakcell(j, decodedsched.at(1) + 1, title: subparams.at("name", default: "Break"), span: subparams.at("span", default: 1)))
+          breakcells.push(breakcell(
+            j,
+            decodedsched.at(1) + 1,
+            title: subparams.at("name", default: "Break"),
+            span: subparams.at("span", default: 1),
+            colspan: subparams.at("colspan", default: 1)
+            ))
         }
       }
     }
@@ -422,23 +431,33 @@
     width: parameters.page-width * 1in,
     height: parameters.page-height * 1in,
     margin: 0pt,
+    fill: tiling(size: (parameters.page-width * 1in / 40, parameters.page-width * 1in / 40))[
+      #place(top+left, rect(width:100%,height:100%, fill:
+      if(parameters.darkmode){catppuccin.crust}else{white.mix(catppuccin.text)}))
+      #place(line(stroke: 4pt + catppuccin.surface2.transparentize(50%), start:(0%,0%), end: (100%,0%)))
+      #place(line(stroke: 4pt + catppuccin.surface2.transparentize(50%), start:(0%,0%), end: (0%,100%)))
+    ], 
   )[
     #set text(font: if (parameters.font != none) { (parameters.font, "Iosevka SS04", "Romeosevka", "Iosevka") } else { font })
 
     #grid(
       stroke: (_, y) => if (parameters.exclude == 0 or y - 1 < parameters.exclude) {
-        stroke(
+        (x: stroke(
           dash: "dotted",
           paint: catppuccin.base,
           thickness: 1pt,
-        )
+        ), y: stroke(
+          dash: "dashed",
+          paint: catppuccin.base,
+          thickness: 1pt,
+        ))
       } else { none },
       columns: (auto, ..(parameters.days * (1fr,))),
       rows: (auto, auto, ..(parameters.height * (1fr,))),
       fill: if(not parameters.darkmode) {
-        gradient.linear(angle: 90deg, white, catppuccin.text.mix(white))
+        gradient.linear(angle: 45deg, white.transparentize(20%), catppuccin.text.mix(white).transparentize(10%))
       } else {
-        gradient.linear(angle: 90deg, catppuccin.surface0, catppuccin.surface1)
+        gradient.linear(angle: 45deg, catppuccin.surface1.transparentize(20%), catppuccin.surface0.transparentize(10%), )
       },
       grid.cell(fill: gradient.linear(angle: 45deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle))[],
       grid.cell(
@@ -450,7 +469,7 @@
         #set text(
           fill: rgb("#cdd6f4"),
           weight: 900,
-          size: 2in / 3,
+          size: 3em,
         )
         #if(parameters.mini){}else{parameters.title}
       ],
