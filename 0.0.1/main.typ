@@ -47,6 +47,7 @@
     parameters.exclude = parameters.at("exclude", default: 0)
     parameters.darkmode = parameters.at("darkmode", default: false)
     parameters.mini = parameters.at("mini", default: false)
+    parameters.icon-scale = parameters.at("icon-scale", default: 1)
   }
 
   #set text(size: 1pt * parameters.at("font-size", default: 20))
@@ -144,21 +145,32 @@
         size: 1.25em,
         fill: textfill,
       )
+
+      
+
       #if (lab) {
         place(top + left, dx: 1pt / 2, dy: 1pt / 2, rect(width: 100% - 1pt, height: 100% - 1pt, fill: modpattern(
-          (parameters.page-width * 2in / 40, parameters.page-width * 2in / 40),
+          (parameters.page-width * parameters.icon-scale * 2in / 40, parameters.page-width * parameters.icon-scale *2in / 40),
           [
             #line(
               start: (100%, 0%),
               end: (0%, 100%),
-              stroke: parameters.page-width * 2in / (80 * calc.sqrt(2))
+              stroke: parameters.page-width *parameters.icon-scale *2in / (80 * calc.sqrt(2))
                 + textfill.mix(rgb(colour)).saturate(50%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) * 1% * 1.5),
             )
           ],
         )))
       } else {
-        place(top + left, dx: 1pt / 2, dy: 1pt / 2, rect(width: 100%, height: 100%, fill: modpattern((1in, 1in), [
-          #set text(fill: textfill.mix(rgb(colour)).saturate(50%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) *1%* 1.5), size: 2in / 3)
+        place(top + left, rect(width: 100%, height: 100%, fill: modpattern(
+          (parameters.page-width * 1in / 40, parameters.page-width * 1in / 40),
+          [
+            #let linefill = textfill.mix(rgb(colour)).saturate(50%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) * 1% * 0.25)
+      #place(line(stroke: 2pt + linefill, start:(0%,0%), end: (100%,0%)))
+      #place(line(stroke: 2pt + linefill, start:(0%,0%), end: (0%,100%)))
+          ],
+        )))
+        place(top + left, dx: 1pt / 2, dy: 1pt / 2, rect(width: 100%, height: 100%, fill: modpattern((1in * parameters.icon-scale, 1in * parameters.icon-scale), [
+          #set text(fill: textfill.mix(rgb(colour)).saturate(50%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) *1%* 1.5), size: 2in  * parameters.icon-scale / 3)
           #place(top + left, dx: 50%)[#iconloader(icon)]
           #place(bottom + left, dx: 0%)[#iconloader(icon)]
         ])))
@@ -186,16 +198,16 @@
         #place(top + left)[
           #set par(leading: 0.25em)
 
-          #text(weight: 900, 5em * 0.6 / 3)[#iconloader("pin_drop", offset: 1pt, scale: 1.25)#h(1em / 4)#room\ ]
+          #text(weight: 900, 5em * 0.6 / 3)[#iconloader("meeting_room", offset: 1pt, scale: 1.25)#h(1em / 4)#room\ ]
         #set text(
             if(parameters.page-height / parameters.page-width >= 1.5){0.6129em}else{0.6em}
           , weight: 700)
           #if (not parameters.export) {
-            [#iconloader("numbers", offset: 1pt, scale: 1.25)#h(1em / 4)*#csc/#code*
+            [#iconloader("code", offset: 1pt, scale: 1.25)#h(1em / 4)*#csc/#code*
               #if (parameters.page-height / parameters.page-width > 1.5) { linebreak() }
             ]
           }
-          #iconloader("person", offset: 1pt, scale: 1.25)#h(1em / 4)_*#inst*_\
+          #iconloader("co_present", offset: 1pt, scale: 1.25)#h(1em / 4)_*#inst*_\
           #iconloader("schedule", offset: 1pt, scale: 1.25)#h(1em / 4)*#time*
         ]
 
@@ -210,6 +222,8 @@
             }) #name]
         ]
       ]]} else {[
+        
+        
 
         #block(
         inset: (
