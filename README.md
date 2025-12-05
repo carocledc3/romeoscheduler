@@ -1,5 +1,5 @@
 # `romeoscheduler`
-Romeo's Grid-based Schedule Graphic maker. Made with [`typst`](https://github.com/typst/typst/). Built for the use of University of the Cordilleras undergraduate students, but applicable for any class schedule with fixed-length periods.
+Romeo's Grid-based Schedule Graphic maker. Made with [`typst`](https://github.com/typst/typst/). Built for the use of University of the Cordilleras undergraduate students, but applicable for any class schedule with fixed-length periods. Documentation WIP.
 
 # Dependencies
 - [Git CLI](https://git-scm.com/downloads)
