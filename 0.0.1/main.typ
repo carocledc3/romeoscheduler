@@ -62,7 +62,7 @@
     catppuccin.mauve,
     catppuccin.subtext0,
   )
-
+  #let dayletters = ("m": 1, "t": 2, "w": 3, "h": 4, "f": 5, "r": 6, "s": 7)
   #let days = if(parameters.mini){
     (
     "Mon.",
@@ -83,11 +83,12 @@
     "Sunday",
   )}
 
-  #let general-gradient(colour, textcol: none, factor: 20%, angle: 45deg) = gradient.linear(
+  #let general-gradient(colour, textcol: none, factor: 20%, angle: 45deg, hueshift: 0) = gradient.linear(
     angle: angle,
-    colour.lighten(factor*2).saturate(factor / 2),
+    space: oklch,
+    colour.rotate(hueshift * -1deg).lighten(factor*2).saturate(factor / 2),
     colour,
-    colour.darken(factor*2/3).saturate(factor),
+    colour.rotate(hueshift * 1deg).darken(factor*2/3).saturate(factor),
   )
 
   #let rawdt(raw) = {
@@ -108,6 +109,8 @@
       formattedtimes.push(
         i.display("[hour repr:12 padding:none]:[minute padding:zero]") + if (i.hour() < 12) { "am" } else { "pm" },
       )
+    } else if (not parameters.export) {
+      formattedtimes.push(i.display("[hour repr:24 padding:zero][minute padding:zero]"))
     } else {
       formattedtimes.push(i.display("[hour repr:24 padding:zero]:[minute padding:zero]"))
     }
@@ -121,6 +124,8 @@
     scale: 1,
     name: "Subject McSubjectFace",
     colour: "#4040dd",
+    colour2: none,
+    hueshift: 0,
     room: "Rubber Room",
     textcol: "#ffffff",
     code: "CCXX",
@@ -132,15 +137,16 @@
   ) = {
     let textfill = if (textcol == none) {
       if (luma(rgb(colour)).components().at(0) > 63%) {
-        color.mix((black, 95%), (rgb(colour), 5%)).lighten(40%).saturate(200%)
+        color.mix(space: oklch, (black, 95%), (rgb(colour), 5%)).lighten(40%).saturate(200%)
       } else {
-        color.mix((white, 95%), (rgb(colour), 5%)).lighten(80%).saturate(10%)
+        color.mix(space: oklch, (white, 95%), (rgb(colour), 5%)).lighten(80%).saturate(10%)
       }
     } else { rgb(textcol) }
-    let cellfill = general-gradient(rgb(colour), textcol: rgb(textcol), angle: 45deg)
+    let cellfill = general-gradient(rgb(colour), textcol: rgb(textcol), angle: 45deg, hueshift: hueshift)
+    let cellfill2 = gradient.linear(space: oklch, ..(2*(rgb(colour),)), ..(2*(if(colour2 != none){rgb(colour2)}else{black},)), angle:45deg)
 
 
-    return grid.cell(x: x, y: y, rowspan: span, inset: 0em, fill: cellfill, [
+    return grid.cell(x: x, y: y, rowspan: span, inset: 0em, fill: if(colour2 != none){cellfill2}else{cellfill}, [
       #set text(
         size: 1.25em,
         fill: textfill,
@@ -156,7 +162,7 @@
               start: (100%, 0%),
               end: (0%, 100%),
               stroke: parameters.page-width *parameters.icon-scale *2in / (80 * calc.sqrt(2))
-                + textfill.mix(rgb(colour)).saturate(50%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) * 1% * 1.5),
+                + if(colour2 == none){textfill.mix(space: oklch, rgb(colour)).saturate(10%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) * 1% * 1.5)}else {textfill.saturate(10%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) *1%)},
             )
           ],
         )))
@@ -164,13 +170,18 @@
         place(top + left, rect(width: 100%, height: 100%, fill: modpattern(
           (parameters.page-width * 1in / 40, parameters.page-width * 1in / 40),
           [
-            #let linefill = textfill.mix(rgb(colour)).saturate(50%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) * 1% * 0.25)
+            #let linefill = textfill.mix(space: oklch, rgb(colour)).saturate(50%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) * 1% * 0.125)
       #place(line(stroke: 2pt + linefill, start:(0%,0%), end: (100%,0%)))
       #place(line(stroke: 2pt + linefill, start:(0%,0%), end: (0%,100%)))
           ],
         )))
         place(top + left, dx: 1pt / 2, dy: 1pt / 2, rect(width: 100%, height: 100%, fill: modpattern((1in * parameters.icon-scale, 1in * parameters.icon-scale), [
-          #set text(fill: textfill.mix(rgb(colour)).saturate(50%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) *1%* 1.5), size: 2in  * parameters.icon-scale / 3)
+          #set text(fill: 
+
+          if(colour2 == none){textfill.mix(space: oklch, rgb(colour)).saturate(10%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) *1%* 1.5)}
+          else {textfill.saturate(10%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) *1%)},
+          
+          size: 2in  * parameters.icon-scale / 3)
           #place(top + left, dx: 50%)[#iconloader(icon)]
           #place(bottom + left, dx: 0%)[#iconloader(icon)]
         ])))
@@ -180,7 +191,7 @@
       #if(not parameters.mini){[#if (lab) {
         place(top + right, dx: -1pt / 2, dy: 1pt / 2)[
           #rect(inset: 0.2em, fill: textfill, stroke: (bottom: 0.5em + textfill.transparentize(33%), left: 0.5em + textfill.transparentize(50%)))[
-            #set text(fill: cellfill, weight: 900, size: 1em)
+            #set text(fill: if(colour2 != none){rgb(colour).mix(space: oklch, rgb(colour2))}else{cellfill}, weight: 900, size: 1em)
             Lab
           ]
         ]
@@ -214,11 +225,11 @@
         #place(bottom + left)[
           #text(weight: 900, size: 1em * scale)[#set par(leading: 1em / 3);
 
-            #text(fill: textfill.mix(rgb(colour)).mix(textfill).saturate(10%),
+            #text(fill: color.mix((textfill, 200%/3), (rgb(colour), 100%/3), space: oklch),
             if(parameters.export) {
               [#code#if(section == ""){}else{"-"+section}]
             } else {
-              [#sym.section#section]
+              [#sym.section#section.replace("CITCS-","~")]
             }) #name]
         ]
       ]]} else {[
@@ -235,11 +246,14 @@
         width: 100%,
         height: 100%,
       )[
+
+        #place(top+right, dy: 1em/8)[#set text(0.8em, weight: 900); §#section.replace("CITCS-","~")]
         #place(horizon)[
           #set par(leading: 0.25em)
-          #set text(1.125em, weight: 900)
-          *#csc/#code*#if(lab){set text(3em/4);[ Lab.]}
-          #text(weight: 700, 1em)[\@#room]
+          #set text(1.4em, weight: 900)
+          #text(0.7em,csc)\
+          #code#if(lab){set text(3em/4);[L]}
+          #text(weight: 700, 3em/4)[#iconloader("meeting_room", offset: 0pt, scale: 1)#room]
         ]
       ]
 
@@ -260,17 +274,27 @@
     rowspan: span,
     inset: 1em / 2,
     align: horizon + center,
+    fill: if(not parameters.darkmode) {
+        gradient.linear(angle: 45deg, white.transparentize(20%), catppuccin.text.mix(white, space: oklch).transparentize(10%))
+      } else {
+        gradient.linear(angle: 45deg, catppuccin.surface0.transparentize(20%), catppuccin.base.transparentize(10%), )
+      }
   )[
     #set text(fill: if(parameters.darkmode) {
       catppuccin.text
     } else {
-      catppuccin.surface1.transparentize(50%)
+      catppuccin.surface2
     }, size: if(parameters.mini){
       1.5em
     }else{2em})
     #emph(title)#linebreak()
     #text(0.6em)[
-      #formattedtimes.at(y - 2) - #formattedtimes.at(y + span - 2)
+      #if(not parameters.export){[
+        #formattedtimes.at(y - 2):#formattedtimes.at(y + span - 2)
+      ]}else{[
+        #formattedtimes.at(y - 2) - #formattedtimes.at(y + span - 2)
+      ]}
+      
     ]
   ]
 
@@ -326,9 +350,14 @@
       [#pn],
     ) \
     #set text(
-      size: if(parameters.page-height / parameters.page-width >= 1.25){1.5em}else{1em}
+      size: if(parameters.page-height / parameters.page-width >= 1.25){1.5em}else{1.15em}
     )
+    #set par(
+      leading: 0em
+    )
+    #v(-0.5em)
     #start \
+    #if(parameters.export){[--]}else{[· ·]}\
     #end \
     ]}
   ]
@@ -342,7 +371,11 @@
       periodcells.push(timecell(i + parameters.offset, start: formattedtimes.at(i - 1), end: formattedtimes.at(i)))
 
       periods.push(
-        formattedtimes.at(i - 1) + " - " + formattedtimes.at(i),
+        if(not parameters.export){
+          formattedtimes.at(i - 1) + ":" + formattedtimes.at(i)
+        }else{
+          formattedtimes.at(i - 1) + " - " + formattedtimes.at(i)
+        },
       )
     }
   }
@@ -369,7 +402,7 @@
 
   #for i in subjects {
     let subparams = i.at(1)
-    if (type(subparams.schedule) == str and subparams.schedule.starts-with(regex("\d"))) {
+    if (subparams.at("schedule", default: none) != none and type(subparams.schedule) == str and subparams.schedule.starts-with(regex("\d"))) {
       let decodedsched = coordsdecoder(subparams.schedule, offset: parameters.offset)
       for j in decodedsched.at(0) {
         if (((j, decodedsched.at(1)) not in coordslist) and (parameters.exclude == 0 or (decodedsched.at(1) < parameters.exclude))) {
@@ -378,9 +411,21 @@
             j,
             decodedsched.at(1) + 1,
             colour: subparams.at("colour", default: "3040dd"),
+            colour2: subparams.at("colour2", default: none),
+            hueshift: subparams.at("hueshift", default: 0),
             textcol: subparams.at("textcolour", default: "eeeeee"),
             inst: subparams.at("teacher", default: "---"),
-            room: subparams.at("room", default: "---"),
+            room: if(subparams.at("room-overrides", default: none) == none) {
+              subparams.at("room", default: "---")
+            } else {
+              for ovr in subparams.room-overrides {
+                if((ovr.at(0) in dayletters) and (j == dayletters.at(ovr.at(0)))) {
+                  ovr.at(1)
+                } else {
+                  subparams.at("room", default: "---")
+                }
+              }
+            },
             name: subparams.at("name", default: "---"),
             icon: subparams.at("icon", default: "deployed_code"),
             scale: subparams.at("scale", default: 1),
@@ -404,6 +449,8 @@
               decodedsched.at(1) + 1,
               lab: true,
               colour: subparams.at("colour", default: "1820cc"),
+              colour2: subparams.at("colour2", default: none),
+              hueshift: subparams.at("hueshift", default: 0),
               textcol: subparams.at("textcolour", default: "eeeeee"),
               inst: subparams.at("lab-teacher", default: "---"),
               room: subparams.at("lab-room", default: "---"),
@@ -447,12 +494,12 @@
     margin: 0pt,
     fill: tiling(size: (parameters.page-width * 1in / 40, parameters.page-width * 1in / 40))[
       #place(top+left, rect(width:100%,height:100%, fill:
-      if(parameters.darkmode){catppuccin.crust}else{white.mix(catppuccin.text)}))
+      if(parameters.darkmode){catppuccin.crust}else{white.mix(space: oklch, catppuccin.text)}))
       #place(line(stroke: 4pt + catppuccin.surface2.transparentize(50%), start:(0%,0%), end: (100%,0%)))
       #place(line(stroke: 4pt + catppuccin.surface2.transparentize(50%), start:(0%,0%), end: (0%,100%)))
     ], 
   )[
-    #set text(font: if (parameters.font != none) { (parameters.font, "Iosevka SS04", "Romeosevka", "Iosevka") } else { font })
+    #set text(font: if (parameters.font != none) { (parameters.font, "Iosevka SS04", "RomeosevkaProp", "Romeosevka", "Iosevka") } else { font })
 
     #grid(
       stroke: (_, y) => if (parameters.exclude == 0 or y - 1 < parameters.exclude) {
@@ -467,9 +514,10 @@
         ))
       } else { none },
       columns: (auto, ..(parameters.days * (1fr,))),
-      rows: (auto, auto, ..(parameters.height * (1fr,))),
+      rows: (auto, if(not parameters.mini){auto}else{2em}, ..(parameters.height * (1fr,))),
       fill: if(not parameters.darkmode) {
-        gradient.linear(angle: 45deg, white.transparentize(20%), catppuccin.text.mix(white).transparentize(10%))
+        gradient.linear(angle: 45deg, catppuccin.text.mix(space: oklch, white).transparentize(10%),
+        catppuccin.text.transparentize(10%))
       } else {
         gradient.linear(angle: 45deg, catppuccin.surface1.transparentize(20%), catppuccin.surface0.transparentize(10%), )
       },
@@ -494,4 +542,5 @@
       ..breakcells,
     )
   ]
+  
 ]
