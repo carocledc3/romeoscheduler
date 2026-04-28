@@ -30,7 +30,9 @@
   #let formattedtimes = ()
   #let periods = ()
   #let periodcells = ()
+  #let overridecells = ()
   #let daycells = ()
+  #let lp-offsets = ()
   #{
     parameters.title = parameters.at("title", default: "Schedule")
     parameters.period-length = parameters.at("period-length", default: 80)
@@ -47,7 +49,11 @@
     parameters.exclude = parameters.at("exclude", default: 0)
     parameters.darkmode = parameters.at("darkmode", default: false)
     parameters.mini = parameters.at("mini", default: false)
+    parameters.icons = parameters.at("icons", default: true)
     parameters.icon-scale = parameters.at("icon-scale", default: 1)
+    parameters.lp-offsets = parameters.at("period-offsets", default: ())
+    parameters.overridecells = parameters.at("overridecells", default: ())
+    parameters.override-row-heights = parameters.at("override-row-heights", default: ())
   }
 
   #set text(size: 1pt * parameters.at("font-size", default: 20))
@@ -101,7 +107,18 @@
     1 + parameters.offset,
     parameters.height + parameters.offset + 2,
   ) {
-    times.push(rawdt(parameters.day-start + (i - 1) * parameters.period-length))
+
+    if(parameters.lp-offsets.at(i, default: 0) != 0) {
+      times.push(rawdt(parameters.day-start + (i - 1) * parameters.period-length));
+      times.push(rawdt(parameters.day-start + (i) * parameters.period-length + parameters.lp-offsets.at(i - 1, default: 0)));
+    } else if (parameters.lp-offsets.at(i - 1, default: 0) != 0) {
+       times.push(rawdt(parameters.day-start + (i - 1) * parameters.period-length + parameters.lp-offsets.at(i - 1, default: 0)));
+       times.push(rawdt(parameters.day-start + (i) * parameters.period-length + parameters.lp-offsets.at(i - 1, default: 0)));
+    } else {
+      times.push(rawdt(parameters.day-start + (i - 1) * parameters.period-length + parameters.lp-offsets.at(i - 1, default: 0)))
+    }
+
+    
   }
 
   #for i in times {
@@ -170,12 +187,12 @@
         place(top + left, rect(width: 100%, height: 100%, fill: modpattern(
           (parameters.page-width * 1in / 40, parameters.page-width * 1in / 40),
           [
-            #let linefill = textfill.mix(space: oklch, rgb(colour)).saturate(50%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) * 1% * 0.125)
+            #let linefill = textfill.mix(space: oklch, rgb(colour)).saturate(50%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) * if(parameters.icons){1%}else{5%} * 0.125)
       #place(line(stroke: 2pt + linefill, start:(0%,0%), end: (100%,0%)))
       #place(line(stroke: 2pt + linefill, start:(0%,0%), end: (0%,100%)))
           ],
         )))
-        place(top + left, dx: 1pt / 2, dy: 1pt / 2, rect(width: 100%, height: 100%, fill: modpattern((1in * parameters.icon-scale, 1in * parameters.icon-scale), [
+        if(parameters.icons){place(top + left, dx: 1pt / 2, dy: 1pt / 2, rect(width: 100%, height: 100%, fill: modpattern((1in * parameters.icon-scale, 1in * parameters.icon-scale), [
           #set text(fill: 
 
           if(colour2 == none){textfill.mix(space: oklch, rgb(colour)).saturate(10%).transparentize(100% - parameters.at("pattern-opacity", default: 12.5%) *1%* 1.5)}
@@ -184,7 +201,7 @@
           size: 2in  * parameters.icon-scale / 3)
           #place(top + left, dx: 50%)[#iconloader(icon)]
           #place(bottom + left, dx: 0%)[#iconloader(icon)]
-        ])))
+        ])))}
       }
 
       #set par(leading: 0.5em)
@@ -208,16 +225,15 @@
       )[
         #place(top + left)[
           #set par(leading: 0.25em)
-
-          #text(weight: 900, 5em * 0.6 / 3)[#iconloader("meeting_room", offset: 1pt, scale: 1.25)#h(1em / 4)#room\ ]
+        
         #set text(
             if(parameters.page-height / parameters.page-width >= 1.5){0.6129em}else{0.6em}
           , weight: 700)
-          #if (not parameters.export) {
-            [#iconloader("code", offset: 1pt, scale: 1.25)#h(1em / 4)*#csc/#code*
-              #if (parameters.page-height / parameters.page-width > 1.5) { linebreak() }
+        #if (not parameters.export) {
+            [#iconloader("code", offset: 1pt, scale: 1.25)#h(1em / 4)*#csc/#code*\
             ]
           }
+          #text(weight: 900, size: (5em / 0.6) * 0.6 / 3)[#iconloader("meeting_room", offset: 1pt, scale: 1.25)#h(1em / 4)#room\ ]
           #iconloader("co_present", offset: 1pt, scale: 1.25)#h(1em / 4)_*#inst*_\
           #iconloader("schedule", offset: 1pt, scale: 1.25)#h(1em / 4)*#time*
         ]
@@ -225,7 +241,13 @@
         #place(bottom + left)[
           #text(weight: 900, size: 1em * scale)[#set par(leading: 1em / 3);
 
-            #text(fill: color.mix((textfill, 200%/3), (rgb(colour), 100%/3), space: oklch),
+            #text(fill: color.mix((textfill, 200%/3),
+            if(colour2 == none) {
+              (rgb(colour), 100%/3)
+            } else {
+              (rgb(colour).mix(rgb(colour2)), 100%/3)
+            },
+            space: oklch),
             if(parameters.export) {
               [#code#if(section == ""){}else{"-"+section}]
             } else {
@@ -324,7 +346,7 @@
     inset: 1em / 2,
     fill: gradient.linear(angle: 45deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle),
     x: 0,
-    y: pn - parameters.offset + 1,
+    y: pn - parameters.offset + if(parameters.lp-offsets.at(pn - 1, default: 0) > 0){2}else{1},
     align: horizon + center,
   )[
     #set text(fill: catppuccin.text, weight: 900)
@@ -347,7 +369,7 @@
           3,
         ),
       weight: 900,
-      [#pn],
+      [#pn#if(parameters.lp-offsets.at(pn - 1, default: 0) > 0){[\*]}],
     ) \
     #set text(
       size: if(parameters.page-height / parameters.page-width >= 1.25){1.5em}else{1.15em}
@@ -368,13 +390,14 @@
 
   #for i in range(1, parameters.height + 1) {
     if (parameters.exclude == 0 or (i < parameters.exclude)) {
-      periodcells.push(timecell(i + parameters.offset, start: formattedtimes.at(i - 1), end: formattedtimes.at(i)))
-
+      periodcells.push(timecell(i + parameters.offset,
+      start: formattedtimes.at(i - 1 + if(parameters.lp-offsets.at(i - 1, default: 0) > 0){1}else{0}),
+      end: formattedtimes.at(i + if(parameters.lp-offsets.at(i - 1, default: 0) > 0){1}else{0})))
       periods.push(
         if(not parameters.export){
-          formattedtimes.at(i - 1) + ":" + formattedtimes.at(i)
+           formattedtimes.at(i - 1 + if(parameters.lp-offsets.at(i - 1, default: 0) > 0){1}else{0}) + ":" + formattedtimes.at(i + if(parameters.lp-offsets.at(i - 1, default: 0) > 0){1}else{0})
         }else{
-          formattedtimes.at(i - 1) + " - " + formattedtimes.at(i)
+           formattedtimes.at(i - 1 + if(parameters.lp-offsets.at(i - 1, default: 0) > 0){1}else{0}) + " - " + formattedtimes.at(i + if(parameters.lp-offsets.at(i - 1, default: 0) > 0){1}else{0})
         },
       )
     }
@@ -409,7 +432,7 @@
           coordslist.push((j, decodedsched.at(1)))
           subjectcells.push(subjectcell(
             j,
-            decodedsched.at(1) + 1,
+            decodedsched.at(1) + if(parameters.lp-offsets.at(decodedsched.at(1) - 1, default: 0) > 0){2}else{1},
             colour: subparams.at("colour", default: "3040dd"),
             colour2: subparams.at("colour2", default: none),
             hueshift: subparams.at("hueshift", default: 0),
@@ -446,7 +469,7 @@
             coordslist.push((j, decodedsched.at(1)))
             subjectcells.push(subjectcell(
               j,
-              decodedsched.at(1) + 1,
+              decodedsched.at(1) + if(parameters.lp-offsets.at(decodedsched.at(1) - 1, default: 0) > 0){2}else{1},
               lab: true,
               colour: subparams.at("colour", default: "1820cc"),
               colour2: subparams.at("colour2", default: none),
@@ -500,7 +523,10 @@
     ], 
   )[
     #set text(font: if (parameters.font != none) { (parameters.font, "Iosevka SS04", "RomeosevkaProp", "Romeosevka", "Iosevka") } else { font })
-
+    #let gridheight = (parameters.height * (1fr,))
+    #for i in range(1, gridheight.len()) {
+      if(parameters.override-row-heights.at(i, default: "none") != "none") {gridheight.insert(i, parameters.override-row-heights.at(i) * 1fr)} 
+    }
     #grid(
       stroke: (_, y) => if (parameters.exclude == 0 or y - 1 < parameters.exclude) {
         (x: stroke(
@@ -514,7 +540,7 @@
         ))
       } else { none },
       columns: (auto, ..(parameters.days * (1fr,))),
-      rows: (auto, if(not parameters.mini){auto}else{2em}, ..(parameters.height * (1fr,))),
+      rows: (auto, if(not parameters.mini){auto}else{2em}, ..gridheight),
       fill: if(not parameters.darkmode) {
         gradient.linear(angle: 45deg, catppuccin.text.mix(space: oklch, white).transparentize(10%),
         catppuccin.text.transparentize(10%))
@@ -533,14 +559,18 @@
           weight: 900,
           size: 3em,
         )
-        #if(parameters.mini){}else{parameters.title}
+        #if(parameters.mini){}else{[#parameters.title
+        #if(parameters.at("subtitle", default: none) != none){[
+          #set par(leading: -1.67em); #linebreak() #set text(2em/3)
+          #parameters.subtitle
+        ]}]}
       ],
       grid.cell(fill: gradient.linear(angle: 45deg, catppuccin.surface0, catppuccin.base, catppuccin.mantle))[],
+      ..parameters.overridecells,
       ..daycells,
       ..periodcells,
       ..subjectcells,
       ..breakcells,
     )
   ]
-  
 ]
